@@ -1,5 +1,5 @@
 (function list(fileList) {
-  function require(filePath) {
+  function require(filePath: keyof typeof fileList) {
     let exports = {};
   
     eval(fileList[filePath])
