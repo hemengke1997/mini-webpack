@@ -14,12 +14,14 @@ const tsc =  tsNode.register({
   }
 })
 
+var options: EntryOptionsType = {}
+
 // 1. 分析单个模块
-function getModuleInfo(filePath: string, options?: EntryOptionsType) {
+function getModuleInfo(filePath: string) {
   // a. 引入文件
   let file = fs.readFileSync(filePath, "utf-8");
 
-  if(options?.ts) {
+  if(options?.typescript) {
     
     file = tsc.compile(file, filePath)
     
@@ -35,7 +37,7 @@ function getModuleInfo(filePath: string, options?: EntryOptionsType) {
   traverse(ast, {
     ImportDeclaration({ node }) {
       
-      if(options?.ts && handleTSPath(node.source.value)) {
+      if(options?.typescript && handleTSPath(node.source.value)) {
         node.source.value = node.source.value + '.ts'
       }
       let p = node.source.value;
@@ -62,12 +64,12 @@ function getModuleInfo(filePath: string, options?: EntryOptionsType) {
 }
 
 // 从一个入口文件开始，分析所有的依赖
-function parseModules(entry: string, options?: EntryOptionsType) {
-  const entryInfo = getModuleInfo(entry, options);
+function parseModules(entry: string) {
+  const entryInfo = getModuleInfo(entry);
 
   if(!entryInfo) return
 
-  const fileList = getDeepDeps([entryInfo], entryInfo.deps, options);
+  const fileList = getDeepDeps([entryInfo], entryInfo.deps);
 
   let depsGragh = Object.create(null);
   
@@ -81,23 +83,24 @@ function parseModules(entry: string, options?: EntryOptionsType) {
   return depsGragh;
 }
 
-function getDeepDeps(fileList: Record<string, any>[], deps: Record<string, any>, options?: EntryOptionsType) {
+function getDeepDeps(fileList: Record<string, any>[], deps: Record<string, any>) {
   let _fileList = [...fileList] 
   Object.values(deps).forEach((value) => {
-    const info = getModuleInfo(value, options);
+    const info = getModuleInfo(value);
     
     if(!info) return
     _fileList.push(info);
 
-    getDeepDeps(_fileList, info.deps, options);
+    getDeepDeps(_fileList, info.deps);
   });
 
   return _fileList
 }
 
 
-export function bundle(entry: string, options?: EntryOptionsType) {
-  const depsGragh = JSON.stringify(parseModules(entry, options));
+export function bundle(entry: string, opts?: EntryOptionsType) {
+  options = opts || {}
+  const depsGragh = JSON.stringify(parseModules(entry));
   return `
     (function(depsGragh){
       function require(filePath) {

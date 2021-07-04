@@ -3,7 +3,7 @@ import fs from "fs"
 import { bundle } from "./src/webpack";
 
 const content = bundle("./example/ts/index.ts", {
-  ts: true
+  typescript: true
 });
 
 
